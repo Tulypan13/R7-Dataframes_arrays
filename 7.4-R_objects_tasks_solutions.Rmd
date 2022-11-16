@@ -1,0 +1,283 @@
+---
+title: "Complex in-built objects in R"
+author: "Luciano Gabbanelli"
+date: "2022-10-10"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    collapse: true
+    smooth_scroll: true
+    theme: journal
+    highlight: kate
+    df_print: paged
+    code_folding: show
+---
+
+
+## 1. Emplyees
+
+```{r}
+id_employees <- c(101:110);id_employees
+employee_names <- c('Florentino', 'Olivia', 'Gael', 'Baldomero', 'Segundo', 'Azul', 'Mateo', 'Miranda', 'Valentina', 'Hilario')
+employee_names
+
+gross_salary <- c(37731.00, 61111.00, 55794.00, 64445.00, 43525.00, 112635.00, 57189.00, 83088.00, 122391.00, 121872.00)
+gross_salary
+
+employees.dataframe <- data.frame(id_employee=id_employees, employee_name=employee_names, gross_salary=gross_salary)
+
+print(employees.dataframe)
+
+employees.dataframe[5:7,]
+
+employees.dataframe[c(3,5),c(1,3)]
+
+employees.dataframe$years_of_experience <- c(1.5, 4.5, 4.0, 3.2, 2.0, 9.6, 3.7, 5.3, 10.3, 10.5)
+print(employees.dataframe)
+
+employees.dataframe$dependents <- c(0, 1, 0, 0, 0, 1, 0, 1, 1, 0)
+employees.dataframe$dependents <- as.logical(employees.dataframe$dependents)
+employees.dataframe
+
+summary(employees.dataframe)
+
+```
+
+
+## 2. Airports
+
+```{r}
+df <- read.csv("7.6-airports.csv", sep=";")
+
+head(df)
+summary(df)
+str(df)
+names(df)
+
+df$ï..AirportID <- NULL
+df$Latitude <- NULL
+df$Longitude <- NULL
+df$Altitude <- NULL
+df$Timezone <- NULL
+summary(df)
+
+
+df$IATA <- as.factor(df$IATA)
+df$ICAO <- as.factor(df$ICAO)
+summary(df)
+df
+
+df <- read.csv("7.6-airports.csv", sep=";")
+colnames(df)
+length(df)
+
+# Remove columns:
+df_rem <- read.csv("7.6-airports.csv", sep=";", na.strings ="\\N")[,c(-1,-7:-10)]
+colnames(df_rem)
+length(df_rem)
+
+# See how missing values appears when na.strings is used? They are of NA type.
+nrow(df)
+df[df_rem$City == "Halifax","IATA"]
+
+nrow(df_rem)
+df_rem[df_rem$City == "Halifax","IATA"]
+
+# Then remove NAs:
+df_rem <- df_rem[complete.cases(df_rem), ]
+nrow(df_rem)
+
+
+to_csv <- df[(df$City == "Madrid" | df$City == "Barcelona"), c("Name", "City", "Country")]
+to_csv
+
+write.csv(x = to_csv, "7.7-airports_export.csv")
+
+```
+
+
+
+## 3. Clear of NAs
+
+```{r}
+
+reeplace.nas <- function(df.entry, rep.v.int, rep.v.bool){
+  for (c in 1:ncol(df.entry)){
+    for (r in 1:length(df.entry[[c]])){
+      #print((df.entry[[c]][r]))
+      if (is.na(df.entry[[c]][r]) == T) {
+        if (typeof(df.entry[[c]]) == "double"){
+          df.entry[[c]][r] <- rep.v.int  
+        } else {
+          df.entry[[c]][r] <- rep.v.bool  
+        }
+      }
+    }
+  }
+  return (df.entry)
+}
+
+my.df <- data.frame(
+  "students" = c("Jose", "María", "Ana", "Javier", "Natalia", "Jorge", "Jose","Elis"),
+  "age" = c(30, NA, NA, 25, 46, 14,NA,38),
+  "working" = c(T,F,T,NA,F,T,NA,F))
+my.df
+
+
+df.clean <- reeplace.nas(df.entry = my.df, rep.v.int = median(my.df$age, na.rm=TRUE), rep.v.bool = T)
+df.clean
+
+df.clean[1]
+class(df.clean[1])
+
+df.clean[1] <- unlist(lapply(df.clean[1],toupper))
+
+df.clean
+df.clean[2]
+
+length(df.clean[[2]])
+
+tapply(df.clean[[2]], df.clean[[3]], mean)
+
+
+# HAY UNA FORMA SUPER FACIL PERO NO SE SI PUEDO DISTINGUIR EL REEMPLAZO PARA 
+# COLUMNAS DE DISTINTA CLASE:
+# dataframe.limpio <- reeplace.nas(df.entrada = my.df, valor.reemplazo = 270)
+
+```
+
+
+## 4. Noble gasses
+
+```{r}
+atomic_number <- c(2,10,18,36,54,86,118)
+strd_at_wht <- c(4.0026, 20.18, 39.95, 83.798, 131.29, NaN, NaN); strd_at_wht
+group <- rep(18,7); group
+gasses <- c('Helium', 'Neon', 'Argon', 'Krypton', 'Xenon', 'Radon', 'Oganesson')
+features <- c('Atomic_number','Standard_atomic_weight', 'Group')
+
+noble_gasses <- matrix(c(atomic_number,strd_at_wht,group),ncol=3,dimnames=list(gasses,features)); noble_gasses
+
+# We need a complex data structure to store integers and characters.
+df_ng=as.data.frame(noble_gasses);
+df_ng
+
+symbols_char <- 'He, Ne, Ar, Kr, Xe, Rn, Og'; symbols_char
+symbols_vector <- unlist(strsplit(symbols_char, split = ', ', fixed=T)); symbols_vector
+is.vector(symbols_vector)
+length(symbols_vector)
+
+df_ng$Symbol <- symbols_vector; df_ng
+
+e_per_shell <- list()
+e_per_shell[[1]] <- c(2)
+e_per_shell[[2]] <- c(2,8)
+e_per_shell[[3]] <- c(2,8,8)
+e_per_shell[[4]] <- c(2,8,18,8)
+e_per_shell[[5]] <- c(2,8,18,18,8)
+e_per_shell[[6]] <- c(2,8,18,32,18,8)
+e_per_shell[[7]] <- c(2,8,18,32,32,18,8)
+e_per_shell
+
+df_ng$Electrons_per_shell <- e_per_shell
+
+df_ng
+str(df_ng)
+attributes(df_ng)
+# Or directly
+colnames(df_ng) 
+rownames(df_ng) 
+
+df_ng$Symbol[[2]]
+
+df_ng$Electrons_per_shell
+
+df_ng[c('Krypton','Radon'),]
+
+subset(df_ng, (Atomic_number == 18 | Symbol == 'He'), select=c(Standard_atomic_weight))
+
+mean(df_ng$Standard_atomic_weight, na.rm=TRUE)
+
+```
+
+
+
+
+
+
+
+
+# Arrays
+
+## 5. Create an array
+
+```{r}
+
+vector.one <- c(1:5)
+vector.two <- c(11:17)
+
+array(data = c(vector.one, vector.two), dim = c(3,2,2))
+array(data = c(vector.one, vector.two), dim = c(2,3,2))
+array(data = c(vector.one, vector.two), dim = c(6,1,2))
+array(data = c(vector.one, vector.two), dim = c(1,6,2))
+
+
+```
+
+## 6. Sample into an array
+```{r}
+my.sample <- sample(1:5, 20, replace = T)
+dim(my.sample) <- c(2,5,2)
+my.sample
+
+dim(my.sample)
+str(my.sample)
+length(my.sample)
+
+dimnames(my.sample) <- list(letters[1:2],LETTERS[1:5],c('M1','M2'))
+
+my.sample
+
+my.sample[,,'M1']
+my.sample[,2,2]
+my.sample['b',,]
+my.sample[2, c(3,5) , ]
+
+rowSums(my.sample, dims = 1)
+rowSums(my.sample, dims = 2)
+```
+
+
+## 7. Sports
+```{r}
+
+team <- c("Atlético", "Real Sociedad", "Villareal", "Rayo Vallecano", "Cádiz")
+points <- c(24, 20, 21, 25 ,18)
+matches <- c(10, 12, 12, 11, 12)
+gols_for <- c(21, 22, 15, 27, 11)
+
+my.teams <- array(c(points,matches,gols_for), dim =c(5,3,1));my.teams
+
+colnames(my.teams) <- c('points','matches','gols_for')
+row.names(my.teams) <- team
+my.teams
+
+my.teams.sq <- array(c(my.teams,my.teams^2),dim = c(5,3,2))
+colnames(my.teams.sq) <- c('points','matches','gols_for')
+# Columns must have the same name? Apparently yes!
+my.teams.sq
+
+colMeans(my.teams.sq)
+# Then
+colMeans(my.teams.sq)[1,1]
+
+colSums(my.teams.sq)
+# Then
+colSums(my.teams.sq)[3,1]
+
+
+``` 
+
+
+
